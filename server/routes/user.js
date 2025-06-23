@@ -60,4 +60,36 @@ router.get("/userinfo", async (req, res) => {
 });
 
 
+// Mobile login routes
+const { sendOTP, verifyOTP } = require("../service/otp");
+router.get("/login-mobile", (req, res) => {
+  res.render("loginMobile"); // ✅ Shows phone input
+});
+
+router.post("/send-otp", async (req, res) => {
+  const { phone } = req.body;
+  console.log("Phone received:", phone);
+
+  const user = await User.findOne({ phone });
+  if (!user) return res.render("loginMobile", { error: "Phone not registered" });
+
+  await sendOTP(phone);
+  res.render("verifyOtp", { phone });
+});
+
+router.post("/verify-otp", async (req, res) => {
+  const { phone, otp } = req.body;
+
+  if (!verifyOTP(phone, otp)) {
+    return res.render("verifyOtp", { phone, error: "Invalid or expired OTP" });
+  }
+
+  const user = await User.findOne({ phone });
+  const token = setUser(user);
+  res.cookie("uid", token, { httpOnly: true });
+  res.redirect("/home");
+
+});
+
+
 module.exports = router;

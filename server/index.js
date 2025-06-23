@@ -9,6 +9,7 @@ const session = require("express-session");
 const passport = require("./config/passport");
 const { connectMongoDB } = require("./connect");
 const { restrictToLoggedInUserOnly } = require("./middlewares/auth");
+const productRoutes = require('./routes/productRoutes');
 
 // 1. CORS Configuration
 app.use(cors({
@@ -40,10 +41,19 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Other middlewares
+app.use(express.json()); // Parse JSON bodies for other routes
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
 // 5. Routes
-app.use("/auth", require("./routes/auth")); // Google OAuth
-app.use("/user", require("./routes/user")); // User-related routes
-app.use("/open", require("./routes/openRouter")); // Public routes
+app.use("/user", require("./routes/user"));
+app.use("/home", restrictToLoggedInUserOnly, require("./routes/staticRouter"));
+app.use("/open", require("./routes/openRouter"));
+app.use("/auth", require("./routes/auth"));
+app.use('/api/queries', restrictToLoggedInUserOnly, require("./routes/queryRoutes"));
+app.use('/api/review', restrictToLoggedInUserOnly, require("./routes/reviewRoutes"));
+app.use('/products', productRoutes);
+app.use('/api/admin', require("./routes/adminRoutes"));
 app.use("/", restrictToLoggedInUserOnly, require("./routes/staticRouter")); // Authenticated routes
 
 // 6. View engine (if you're using EJS for rendering pages)
@@ -51,10 +61,18 @@ app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
 
 // 7. MongoDB connection
-connectMongoDB(process.env.MONGO_URI);
+connectMongoDB(process.env.MONGO_URI).catch(err => {
+  console.error('MongoDB connection error:', err);
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 // 8. Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(` Server running at http://localhost:${PORT}`);
 });

@@ -94,3 +94,9 @@ export const searchQueryAtom = atom<string>({
   key: 'searchQueryAtom',
   default: '',
 });
+
+// state.tsx
+export const searchTermAtom = atom<string>({
+  key: 'searchTerm',
+  default: '',
+});

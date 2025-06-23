@@ -9,11 +9,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 interface CartDrawerProps {
+  children: React.ReactNode;
+  userEmail: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
+const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose}) => {
   const { cart, removeFromCart, updateQuantity } = useCart();
   const authState = useRecoilValue(authStateAtom);
   const { openModal } = useLoginModal(); // ✅ Use modal context

@@ -17,24 +17,29 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+interface CartProviderProps {
+  children: ReactNode;
+  userEmail?: string | null;
+}
+
+export const CartProvider: React.FC<CartProviderProps> = ({ children, userEmail }) => {
+  const storageKey = userEmail ? `cart_${userEmail}` : 'cart_guest';
+
   const [cart, setCart] = useState<CartItem[]>(() => {
-    // Load cart from localStorage on initial render
-    const storedCart = localStorage.getItem('cart');
+    const storedCart = localStorage.getItem(storageKey);
     return storedCart ? JSON.parse(storedCart) : [];
   });
 
-  //  Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
+    localStorage.setItem(storageKey, JSON.stringify(cart));
+  }, [cart, storageKey]);
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
       const exists = prev.find((p) => p.id === item.id);
       if (exists) {
         return prev.map((p) =>
-          p.id === item.id ? { ...p, quantity: p.quantity + item.quantity } : p
+          p.id === item.id ? { ...p, quantity: item.quantity } : p
         );
       }
       return [...prev, item];

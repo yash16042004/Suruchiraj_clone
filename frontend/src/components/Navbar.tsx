@@ -1,4 +1,3 @@
-// ✅ Moved AuthButton outside Navbar to prevent unnecessary re-renders
 import React, { useState, useEffect } from 'react';
 import {
   FiMenu,
@@ -12,7 +11,7 @@ import clsx from 'clsx';
 import CartDrawer from './CartDrawer';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { authStateAtom, userInfoAtom } from '../state/state';
+import { authStateAtom, userInfoAtom, searchTermAtom } from '../state/state'; // ✅ import searchTermAtom
 
 const AuthButton = () => {
   const isLoggedIn = useRecoilValue(authStateAtom);
@@ -90,7 +89,8 @@ const Navbar: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const { cart } = useCart();
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = useRecoilValue(searchTermAtom); // ✅ get searchTerm from Recoil
+  const setSearchQuery = useSetRecoilState(searchTermAtom); // ✅ set searchTerm from input
   const navigate = useNavigate();
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -111,17 +111,11 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Products', href: '/sub-products' },
+    { name: 'Products', href: '/products' },
     { name: 'Contact', href: '#footer' },
     { name: 'About Us', href: '#footer' },
   ];
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-      setIsOpen(false);
-    }
-  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -160,8 +154,8 @@ const Navbar: React.FC = () => {
           {/* Desktop */}
           <div className="hidden md:flex items-center justify-between w-full">
             <Link to="/" className="text-2xl font-bold text-white hover:text-red-500 transition">Suruchiraj</Link>
-            <div className="flex items-center space-x-4 ml-80">
-              <nav className="flex space-x-6">
+            <div className="flex items-center space-x-1 ml-80">
+              <nav className="flex space-x-3">
                 {navLinks.map((link) => (
                   <Link key={link.name} to={link.href} className="text-gray-300 hover:text-red-500 transition duration-200">{link.name}</Link>
                 ))}
@@ -170,12 +164,12 @@ const Navbar: React.FC = () => {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onChange={(e) => setSearchQuery(e.target.value)} // ✅ update atom
+                  onKeyDown={(e) => e.key === 'Enter' && navigate('/products')}
                   placeholder={`Search for "${trendingMasalas[placeholderIndex]}"`}
                   className="w-full px-4 pr-1 py-2 rounded-full border font-normal border-gray-500 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300"
                 />
-                <img src="search.png" alt="search" onClick={handleSearch} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 cursor-pointer" />
+                <img src="search.png" alt="search" onClick={() => navigate('/products')} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 cursor-pointer" />
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -210,15 +204,15 @@ const Navbar: React.FC = () => {
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onChange={(e) => setSearchQuery(e.target.value)} // ✅ update atom
+            onKeyDown={(e) => e.key === 'Enter' && navigate('/products')}
             placeholder={`Search for "${trendingMasalas[placeholderIndex]}"`}
             className="w-full pl-10 pr-10 py-2 rounded-full text-sm text-gray-800 bg-white focus:outline-none"
           />
         </div>
       </div>
 
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} children={undefined} userEmail={null} />
     </>
   );
 };

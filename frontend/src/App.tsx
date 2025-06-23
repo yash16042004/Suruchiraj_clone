@@ -15,9 +15,13 @@ import LoginModal from './components/LoginModal';
 import SearchResults from './pages/SearchResults';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CheckoutPage from './pages/CheckoutPage';
+import { CartProvider } from './context/CartContext';
+import { userInfoAtom } from './state/state';
+import { useRecoilValue } from 'recoil';
 
 // CONTEXT
 import { LoginModalProvider } from './context/LoginModalContext';
+import { WishlistProvider } from './context/WishlistContext';
 
 // Category Pages
 import Veg from './pages/categories/Veg';
@@ -40,6 +44,13 @@ import Other from './pages/cuisines/Other';
 
 // Sub Products Page
 import SubProducts from './pages/SubProducts';
+
+// User Pages
+import Profile from './pages/user/Profile';
+import Orders from './pages/user/Orders';
+
+import AdminDashboard from './components/AdminDashboard';
+import ProductsPage from './pages/ProductsPage';
 
 const HomePage: React.FC = () => {
   return (
@@ -79,51 +90,67 @@ const HomePage: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const user = useRecoilValue(userInfoAtom);
   return (
     <RecoilRoot> {/* ✅ Recoil context added */}
       <Router>
         <LoginModalProvider>
-          <div className="font-sans text-gray-900">
-            <Navbar />
-            <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-            <LoginModal />
+          <WishlistProvider>
+            <CartProvider userEmail={user.email}> {/* ✅ Cart context with user email */}
+              <div className="font-sans text-gray-900">
+                <Navbar />
+                <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+                <LoginModal />
 
-            <Routes>
-              <Route path="/" element={<HomePage />} />
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
 
-              {/* Top Category Pages */}
-              <Route path="/categories/Veg" element={<Veg />} />
-              <Route path="/categories/NonVeg" element={<NonVeg />} />
-              <Route path="/categories/Snacks" element={<Snacks />} />
-              <Route path="/categories/Soups" element={<Soups />} />
-              <Route path="/categories/biryani" element={<Biryani />} />
-              <Route path="/categories/SouthIndian" element={<SouthIndian />} />
-              <Route path="/categories/Maharashtrian" element={<Maharashtrian />} />
-              <Route path="/categories/Beverages" element={<Beverages />} />
-              <Route path="/categories/pickle" element={<Pickle />} />
+                  {/* Top Category Pages */}
+                  <Route path="/categories/Veg" element={<Veg />} />
+                  <Route path="/categories/NonVeg" element={<NonVeg />} />
+                  <Route path="/categories/Snacks" element={<Snacks />} />
+                  <Route path="/categories/Soups" element={<Soups />} />
+                  <Route path="/categories/biryani" element={<Biryani />} />
+                  <Route path="/categories/SouthIndian" element={<SouthIndian />} />
+                  <Route path="/categories/Maharashtrian" element={<Maharashtrian />} />
+                  <Route path="/categories/Beverages" element={<Beverages />} />
+                  <Route path="/categories/pickle" element={<Pickle />} />
 
-              {/* International Cuisine Pages */}
-              <Route path="/cuisines/american" element={<American />} />
-              <Route path="/cuisines/thai" element={<Thai />} />
-              <Route path="/cuisines/mexican" element={<Mexican />} />
-              <Route path="/cuisines/italian" element={<Italian />} />
-              <Route path="/cuisines/chinese" element={<Chinese />} />
-              <Route path="/cuisines/other" element={<Other />} />
+                  {/* International Cuisine Pages */}
+                  <Route path="/cuisines/american" element={<American />} />
+                  <Route path="/cuisines/thai" element={<Thai />} />
+                  <Route path="/cuisines/mexican" element={<Mexican />} />
+                  <Route path="/cuisines/italian" element={<Italian />} />
+                  <Route path="/cuisines/chinese" element={<Chinese />} />
+                  <Route path="/cuisines/other" element={<Other />} />
 
-              {/* Sub Products Page */}
-              <Route path="/sub-products" element={<SubProducts />} />
+                  {/* Sub Products Page */}
+                  <Route path="/sub-products" element={<SubProducts />} />
 
-              {/* Search Results Page */}
-              <Route path="/search" element={<SearchResults />} />
+                  {/* Search Results Page */}
+                  <Route path="/search" element={<SearchResults />} />
 
-              {/* Product Detail Page */}
-              <Route path="/product/:id" element={<ProductDetailPage />} />
+                  {/* Product Detail Page */}
+                  <Route path="/product/:id" element={<ProductDetailPage />} />
 
-              {/* Checkout Page */}
-              <Route path="/checkout" element={<CheckoutPage />} />
-              {/* Fallback Route */}
-            </Routes>
-          </div>
+                  {/* Checkout Page */}
+                  <Route path="/checkout" element={<CheckoutPage />} />
+
+                  {/* User Profile Page */}
+                  <Route path="/user/dashboard/profile" element={<Profile />} />
+                  <Route path="/user/dashboard/orders" element={<Orders />} />
+
+                  {/* Admin Dashboard Route */}
+                  <Route path="/admin" element={<AdminDashboard />} />
+          
+                  {/* Products Page Route */}
+                  <Route path="/products" element={<ProductsPage />} />
+                  
+                  {/* Fallback Route */}
+                </Routes>
+              </div>
+            </CartProvider>
+          </WishlistProvider>
         </LoginModalProvider>
       </Router>
     </RecoilRoot>

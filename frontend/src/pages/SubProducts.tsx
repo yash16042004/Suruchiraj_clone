@@ -1,41 +1,58 @@
-import { useState } from 'react';
-import { FiFilter, FiX } from 'react-icons/fi';
-import { useCart } from '../context/CartContext'; 
+import { useState, useEffect } from 'react';
+import { FiFilter, FiHeart, FiX } from 'react-icons/fi';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { getAllProducts } from '../services/productService';
+import toast from 'react-hot-toast';
+import { useRecoilValue } from 'recoil';
+import { searchTermAtom } from '../state/state';
+import type { Product } from '../types/product';
 
 const filters = {
   quantity: ['50 g', '100 g', '500 g'],
   categories: [
-    'Veg Masala',
-    'South Indian',
-    'Non Veg Masala',
-    'Chinese Masala',
-    'Special Masala',
-    'View more',
+    'Veg', 'Non Veg', 'Maharashtrian', 'Snacks', 'Beverages',
+    'Rice', 'Pickle', 'South Indian', 'Soups', 'American',
+    'Chinese', 'Italian', 'Mexican', 'Thai', 'Other',
   ],
 };
 
-const dummyProducts = Array(12).fill({
-  name: 'Red Chili Powder',
-  price: 49,
-  originalPrice: 70,
-  discount: '20% off',
-  weight: '50 g',
-  image: '/sub products/red-chilli.png',
-});
-
 const SubProducts = () => {
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { cart, addToCart, removeFromCart } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const searchTerm = useRecoilValue(searchTermAtom);
 
-  const { cart, addToCart, removeFromCart } = useCart(); // ✅ Global cart
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllProducts();
+        setProducts(data);
+      } catch (err) {
+        toast.error('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
-  const toggleWishlist = (productName: string) => {
-    setWishlist((prev) => {
-      const newSet = new Set(prev);
-      newSet.has(productName) ? newSet.delete(productName) : newSet.add(productName);
-      return newSet;
-    });
+  const handleWishlistToggle = (product: Product) => {
+    toggleWishlist(product);
+    const msg = isWishlisted(product.id) ? 'Removed from wishlist' : 'Added to wishlist';
+    toast.success(msg);
   };
+
+  const filteredProducts = products.filter((product) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(term) ||
+      product.category.toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="bg-black text-white min-h-screen px-4 py-6 sm:px-6 sm:py-8">
@@ -54,10 +71,9 @@ const SubProducts = () => {
       <div className="flex gap-6">
         {/* Sidebar (Desktop Only) */}
         <aside className="w-60 bg-black text-white hidden sm:block">
-          <h2 className="text-2xl font-medium font-body mb-4">Filters</h2>
-
+          <h2 className="text-2xl font-medium text-yellow-400 font-body mb-4">Filters</h2>
           <div className="mb-6 font-body">
-            <h3 className="font-medium font-heading text-xl mb-2">Quantity</h3>
+            <h3 className="font-semibold font-heading text-xl mb-2">Quantity</h3>
             <ul className="space-y-2 text-sm text-gray-300">
               {filters.quantity.map((qty) => (
                 <li key={qty}>
@@ -69,13 +85,15 @@ const SubProducts = () => {
               ))}
             </ul>
           </div>
-
           <div>
             <h3 className="font-semibold font-heading text-xl mb-2">Category</h3>
             <ul className="space-y-2 text-sm text-gray-300">
               {filters.categories.map((cat) => (
                 <li key={cat}>
-                  <span className="cursor-pointer hover:text-yellow-400">{cat}</span>
+                  <label className="inline-flex items-center space-x-2">
+                    <input type="checkbox" className="w-5 h-5 appearance-none border-2 border-yellow-400 rounded bg-black checked:bg-yellow-400 checked:border-yellow-400 transition-colors duration-200" />
+                    <span>{cat}</span>
+                  </label>
                 </li>
               ))}
             </ul>
@@ -85,90 +103,103 @@ const SubProducts = () => {
         {/* Product Grid */}
         <main className="flex-1 font-body">
           <div className="hidden sm:flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-yellow-400">Products</h1>
+            <h1 className="text-2xl font-bold text-white">Products</h1>
             <span className="text-sm text-white font-medium cursor-pointer">All Categories</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-            {dummyProducts.map((product, index) => {
-              const isWishlisted = wishlist.has(product.name);
-              const quantity = cart[product.id]?.quantity || 0;
+          {loading ? (
+            <p className="text-white text-center">Loading products...</p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="text-gray-400 text-center mt-10">No products found.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
+              {filteredProducts.map((product) => {
+                const quantity = cart[product.id]?.quantity || 0;
 
-              return (
-                <div
-                  key={index}
-                  className="bg-[#141414] rounded-2xl overflow-hidden relative group transition transform hover:-translate-y-1"
-                >
-                  {/* Wishlist Icon */}
-                  <div className="absolute top-3 right-3 z-10">
-                    <button onClick={() => toggleWishlist(product.name)} className="text-white text-sm">
-                      {isWishlisted ? '❤️' : '🤍'}
-                    </button>
-                  </div>
-
-                  {/* Product Image */}
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-36 object-cover"
-                  />
-
-                  {/* Product Info */}
-                  <div className="p-3 pt-4 text-white bg-[#141414]">
-                    <h3 className="text-sm font-medium">{product.name}</h3>
-                    <div className="flex items-center font-sans space-x-2 text-sm mt-1">
-                      <span className="text-green-400 font-semibold">{product.discount}</span>
-                      <span className="line-through text-gray-400">₹{product.originalPrice}</span>
-                      <span className="font-semibold">₹{product.price}</span>
-                    </div>
-                    <div className="text-xs font-sans text-gray-300 mt-1">{product.weight}</div>
-
-                    {/* Add to Cart / Quantity Controls */}
-                    {quantity === 0 ? (
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-[#141414] rounded-2xl overflow-hidden relative group transition transform hover:-translate-y-1"
+                  >
+                    {/* Wishlist Icon */}
+                    <div className="absolute top-3 right-3 z-10">
                       <button
-                        onClick={() =>
-                          addToCart({
-                            id: product.name,
-                            name: product.name,
-                            price: product.price,
-                            quantity: 1,
-                            
-                          })
-                        }
-                        className="mt-3 w-full bg-yellow-400 text-black text-sm font-semibold py-1.5 rounded-full hover:bg-yellow-300 transition"
+                        onClick={() => handleWishlistToggle(product)}
+                        className="text-white text-sm"
                       >
-                        Add Cart
+                        <FiHeart
+                          className={`text-lg transition ${
+                            isWishlisted(product.id)
+                              ? 'text-red-500 fill-red-500'
+                              : 'text-white'
+                          }`}
+                        />
                       </button>
-                    ) : (
-                      <div className="mt-3 flex items-center justify-between bg-yellow-400 rounded-full px-3 py-1.5 text-black font-semibold text-sm">
+                    </div>
+
+                    {/* Product Image */}
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-36 object-cover"
+                    />
+
+                    {/* Product Info */}
+                    <div className="p-3 pt-4 text-white bg-[#141414]">
+                      <h3 className="text-sm font-medium">{product.name}</h3>
+                      <div className="flex items-center font-sans space-x-2 text-sm mt-1">
+                        <span className="text-green-400 font-semibold">
+                          ₹{Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
+                        </span>
+                        <span className="line-through text-gray-400">₹{product.mrp}</span>
+                        <span className="font-semibold">₹{product.price}</span>
+                      </div>
+                      <div className="text-xs font-sans text-gray-300 mt-1">{product.weight}</div>
+
+                      {quantity === 0 ? (
                         <button
                           onClick={() =>
                             addToCart({
-                              id: product.name,
+                              id: product.id,
                               name: product.name,
                               price: product.price,
                               quantity: 1,
-                              
                             })
                           }
-                          className="px-2"
+                          className="mt-3 w-full bg-yellow-400 text-black text-sm font-semibold py-1.5 rounded-full hover:bg-yellow-300 transition"
                         >
-                          +
+                          Add Cart
                         </button>
-                        <span>{quantity}</span>
-                        <button
-                          onClick={() => removeFromCart(product.name)}
-                          className="px-2"
-                        >
-                          −
-                        </button>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="mt-3 flex items-center justify-between bg-yellow-400 rounded-full px-3 py-1.5 text-black font-semibold text-sm">
+                          <button
+                            onClick={() =>
+                              addToCart({
+                                id: product.id,
+                                name: product.name,
+                                price: product.price,
+                                quantity: 1,
+                              })
+                            }
+                            className="px-2"
+                          >
+                            +
+                          </button>
+                          <span>{quantity}</span>
+                          <button
+                            onClick={() => removeFromCart(product.id)}
+                            className="px-2"
+                          >
+                            −
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </main>
       </div>
 
