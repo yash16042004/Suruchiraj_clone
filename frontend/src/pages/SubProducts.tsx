@@ -42,7 +42,7 @@ const SubProducts = () => {
 
   const handleWishlistToggle = (product: Product) => {
     toggleWishlist(product);
-    const msg = isWishlisted(product.id) ? 'Removed from wishlist' : 'Added to wishlist';
+    const msg = isWishlisted(product._id) ? 'Removed from wishlist' : 'Added to wishlist';
     toast.success(msg);
   };
 
@@ -118,7 +118,7 @@ const SubProducts = () => {
 
                 return (
                   <div
-                    key={product.id}
+                    key={product._id}
                     className="bg-[#141414] rounded-2xl overflow-hidden relative group transition transform hover:-translate-y-1"
                   >
                     {/* Wishlist Icon */}
@@ -160,7 +160,7 @@ const SubProducts = () => {
                         <button
                           onClick={() =>
                             addToCart({
-                              id: product.id,
+                              id: product._id,
                               name: product.name,
                               price: product.price,
                               quantity: 1,

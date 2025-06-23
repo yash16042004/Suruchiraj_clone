@@ -7,6 +7,7 @@ export interface NutritionValue {
 }
 
 export interface Product {
+  mrp: number;
   _id: string;
   name: string;
   category: string;

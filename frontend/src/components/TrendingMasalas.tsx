@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   FiHeart,
   FiPlus,
@@ -35,24 +35,12 @@ const products: Product[] = [
 ];
 
 const TrendingMasalas: React.FC = () => {
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
-  const [showQuantitySelector, setShowQuantitySelector] = useState<{ [key: number]: boolean }>({});
+  
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
   const swiperRef = useRef<SwiperType | null>(null);
-  const { addToCart } = useCart();
+  const { cart, addToCart, updateQuantity, removeFromCart } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
-
-  useEffect(() => {
-    const initialQty: { [key: number]: number } = {};
-    const initialSelector: { [key: number]: boolean } = {};
-    products.forEach((product) => {
-      initialQty[product.id] = 1;
-      initialSelector[product.id] = false;
-    });
-    setQuantities(initialQty);
-    setShowQuantitySelector(initialSelector);
-  }, []);
 
   const handleWishlistToggle = (product: Product) => {
     toggleWishlist(product);
@@ -60,30 +48,32 @@ const TrendingMasalas: React.FC = () => {
   };
 
   const handleAddToCart = (product: Product) => {
-    const qty = quantities[product.id] || 1;
     addToCart({
       id: product.id,
       name: product.name,
-      quantity: qty,
+      quantity: 1,
       price: product.price,
     });
-    toast.success(`${product.name} (x${qty}) added to cart!`);
+    toast.success(`${product.name} added to cart!`);
   };
 
-  const handleIncrement = (id: number, product: Product) => {
-    setQuantities((q) => ({ ...q, [id]: (q[id] || 1) + 1 }));
-    handleAddToCart(product);
+  const handleIncrement = (id: number) => {
+    const item = cart.find((item) => item.id === id);
+    if (item) {
+      updateQuantity(id, item.quantity + 1);
+    }
   };
 
   const handleDecrement = (id: number) => {
-    setQuantities((q) => {
-      const newQty = (q[id] || 1) - 1;
-      if (newQty <= 0) {
-        setShowQuantitySelector((s) => ({ ...s, [id]: false }));
-        return { ...q, [id]: 1 };
+    const item = cart.find((item) => item.id === id);
+    if (item) {
+      if (item.quantity > 1) {
+        updateQuantity(id, item.quantity - 1);
+      } else {
+        removeFromCart(id);
+
       }
-      return { ...q, [id]: newQty };
-    });
+    }
   };
 
   const handleSlideChange = () => {
@@ -146,155 +136,147 @@ const TrendingMasalas: React.FC = () => {
             1024: { slidesPerView: 5 },
           }}
         >
-          {products.map((product) => (
-            <SwiperSlide
-              key={product.id}
-              className="relative w-full overflow-visible transition-transform duration-300 hover:scale-[1.03]"
-            >
-              {/* Mobile Version */}
-              <div className="block md:hidden w-full max-w-[96vw] mx-auto">
-                <div className="relative w-full aspect-[3/4]">
-                  {product.image && (
-                    <div className="relative w-full h-full rounded-t-3xl overflow-hidden">
-                      <Link to={`/product/${product.id}`}>
-                        <img src={product.image} alt={product.name} className="w-full h-[80%] object-cover drop-shadow-xl pointer-events-none" />
-                      </Link>
+          {products.map((product) => {
+            const cartItem = cart.find((item) => item.id === product.id);
+            const quantity = cartItem?.quantity || 0;
 
-                      {/* Wishlist Icon */}
-                      <div
-                        className="absolute top-[1vw] right-[2vw] z-50 cursor-pointer"
-                        onClick={() => handleWishlistToggle(product)}
-                      >
-                        <FiHeart
-                          className={`text-[3vw] transition ${
-                            isWishlisted(product.id) ? 'text-red-500 fill-red-500' : 'text-white'
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Info Card */}
-                <div className="-mt-[12vw] w-full bg-white/10 backdrop-blur-md border-l border-r border-b border-[#6B0073]/60 rounded-b-3xl px-[3vw] py-[4vw] text-white">
-                  {/* Product Name + 50g */}
-                  <div className="w-full mb-[1.5vw]">
-                    <Link to={`/product/${product.id}`}>
-                      <h3 className="text-[2.8vw] font-semibold font-body truncate">
-                        {product.name}
-                      </h3>
-                      <span className="text-[2vw] text-gray-300 font-sans font-medium mt-[0.5vw] block">
-                        50g
-                      </span>
-                    </Link>
-                  </div>
-
-                  {/* Price + Discount */}
-                  <div className="w-full flex items-center justify-between mb-[2vw]">
-                    <div className="text-[3vw] font-semibold font-sans text-white">
-                      ₹<span className="line-through text-gray-300">{product.mrp}</span>{' '}
-                      <span className="text-white">{product.price}</span>
-                    </div>
-                    <div className="text-[2vw] bg-lime-400 text-black font-semibold px-[1.5vw] py-[0.5vw] rounded-full w-fit font-button">
-                      {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
-                    </div>
-                  </div>
-
-                  {/* Add to Cart or Quantity Controls */}
-                  <div className="w-full">
-                    {!showQuantitySelector[product.id] ? (
-                      <button
-                        onClick={() => {
-                          setShowQuantitySelector((s) => ({ ...s, [product.id]: true }));
-                          setQuantities((q) => ({ ...q, [product.id]: 1 }));
-                          handleAddToCart(product);
-                        }}
-                        className="w-full h-[7vw] bg-yellow-400 hover:bg-yellow-300 text-black font-semibold font-button rounded-full flex items-center justify-center text-[3.5vw] shadow-md transition-all duration-200 ease-in-out"
-                      >
-                        Add
-                      </button>
-                    ) : (
-                      <div className="flex justify-between items-center w-full bg-yellow-400 text-black rounded-full px-[3vw] py-[1vw] text-[3.5vw] font-semibold font-button shadow-md">
-                        <button onClick={() => handleDecrement(product.id)}><FiMinus /></button>
-                        <span>{quantities[product.id]}</span>
-                        <button onClick={() => handleIncrement(product.id, product)}><FiPlus /></button>
+            return (
+              <SwiperSlide
+                key={product.id}
+                className="relative w-full overflow-visible transition-transform duration-300 hover:scale-[1.03]"
+              >
+                {/* Mobile Version */}
+                <div className="block md:hidden w-full max-w-[96vw] mx-auto">
+                  <div className="relative w-full aspect-[3/4]">
+                    {product.image && (
+                      <div className="relative w-full h-full rounded-t-3xl overflow-hidden">
+                        <Link to={`/product/${product.id}`}>
+                          <img src={product.image} alt={product.name} className="w-full h-[80%] object-cover drop-shadow-xl pointer-events-none" />
+                        </Link>
+                        <div
+                          className="absolute top-[1vw] right-[2vw] z-50 cursor-pointer"
+                          onClick={() => handleWishlistToggle(product)}
+                        >
+                          <FiHeart
+                            className={`text-[3vw] transition ${
+                              isWishlisted(product.id) ? 'text-red-500 fill-red-500' : 'text-white'
+                            }`}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
 
-              </div>
-
-              {/* Desktop Version */}
-              <div className="hidden md:block">
-                <div className="absolute -top-0 inset-x-0 z-40 px-2 pointer-events-drag cursor-pointer">
-                  <div className="relative">
-                    <Link to={`/product/${product.id}`}>
-                      <img src={product.image} alt={product.name} className="h-full w-full object-fill drop-shadow-xl pointer-events-none cursor-pointer" />
-                    </Link>
-                    <div
-                      className="absolute top-1 right-2 z-50 cursor-pointer"
-                      onClick={() => handleWishlistToggle(product)}
-                    >
-                      <FiHeart
-                        className={`text-xl transition ${
-                          isWishlisted(product.id) ? 'text-red-500 fill-red-500' : 'text-white'
-                        }`}
-                      />
+                  <div className="-mt-[12vw] w-full bg-white/10 backdrop-blur-md border-l border-r border-b border-[#6B0073]/60 rounded-b-3xl px-[3vw] py-[4vw] text-white">
+                    <div className="w-full mb-[1.5vw]">
+                      <Link to={`/product/${product.id}`}>
+                        <h3 className="text-[2.8vw] font-semibold font-body truncate">
+                          {product.name}
+                        </h3>
+                        <span className="text-[2vw] text-gray-300 font-sans font-medium mt-[0.5vw] block">
+                          50g
+                        </span>
+                      </Link>
                     </div>
-                  </div>
-                </div>
 
-                <div className="mt-[200px] px-2 pt-0">
-                  <div className="bg-transparent backdrop-blur-xl border-l border-r border-b border-[#6B0073]/60 rounded-b-3xl p-4 pb-5 text-white relative w-full">
-                    
-                    {/* Price + Discount */}
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <div className="text-lg text-white font-sans">
-                        ₹ <span className="line-through text-gray-400">{product.mrp}</span>{' '}
-                        <span className="font-semibold">{product.price}</span>
+                    <div className="w-full flex items-center justify-between mb-[2vw]">
+                      <div className="text-[3vw] font-semibold font-sans text-white">
+                        ₹<span className="line-through text-gray-300">{product.mrp}</span>{' '}
+                        <span className="text-white">{product.price}</span>
                       </div>
-                      <div className="text-xs bg-lime-400 text-black font-semibold px-2 py-0.5 rounded-full font-button">
+                      <div className="text-[2vw] bg-lime-400 text-black font-semibold px-[1.5vw] py-[0.5vw] rounded-full w-fit font-button">
                         {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
                       </div>
                     </div>
 
-                    {/* Product Name */}
-                    <div className="mb-2 w-full">
-                      <Link to={`/product/${product.id}`}>
-                        <h3 className="text-base font-semibold font-body truncate w-full text-left flex items-center gap-2">
-                          {product.name}
-                          <span className="text-sm text-gray-300 font-sans font-normal">(50g)</span>
-                        </h3>
-                      </Link>
-                    </div>
-
-                    {/* Add to Cart or Quantity Buttons */}
                     <div className="w-full">
-                      {!showQuantitySelector[product.id] ? (
+                      {quantity === 0 ? (
                         <button
                           onClick={() => {
-                            setShowQuantitySelector((s) => ({ ...s, [product.id]: true }));
-                            setQuantities((q) => ({ ...q, [product.id]: 1 }));
+                            
                             handleAddToCart(product);
                           }}
-                          className="w-full bg-yellow-400 text-black px-3 py-1 text-sm rounded-full font-semibold hover:brightness-110 transition font-button"
+                          className="w-full h-[7vw] bg-yellow-400 hover:bg-yellow-300 text-black font-semibold font-button rounded-full flex items-center justify-center text-[3.5vw] shadow-md transition-all duration-200 ease-in-out"
                         >
                           Add
                         </button>
                       ) : (
-                        <div className="flex justify-between items-center w-full bg-yellow-400 rounded-full px-4 py-1 text-black text-sm font-button">
+                        <div className="flex justify-between items-center w-full bg-yellow-400 text-black rounded-full px-[3vw] py-[1vw] text-[3.5vw] font-semibold font-button shadow-md">
                           <button onClick={() => handleDecrement(product.id)}><FiMinus /></button>
-                          <span>{quantities[product.id]}</span>
-                          <button onClick={() => handleIncrement(product.id, product)}><FiPlus /></button>
+                          <span>{quantity}</span>
+                          <button onClick={() => handleIncrement(product.id)}><FiPlus /></button>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
-            </SwiperSlide>
-          ))}
+
+                {/* Desktop Version */}
+                <div className="hidden md:block">
+                  <div className="absolute -top-0 inset-x-0 z-40 px-2 pointer-events-drag cursor-pointer">
+                    <div className="relative">
+                      <Link to={`/product/${product.id}`}>
+                        <img src={product.image} alt={product.name} className="h-full w-full object-fill drop-shadow-xl pointer-events-none cursor-pointer" />
+                      </Link>
+                      <div
+                        className="absolute top-1 right-2 z-50 cursor-pointer"
+                        onClick={() => handleWishlistToggle(product)}
+                      >
+                        <FiHeart
+                          className={`text-xl transition ${
+                            isWishlisted(product.id) ? 'text-red-500 fill-red-500' : 'text-white'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-[200px] px-2 pt-0">
+                    <div className="bg-transparent backdrop-blur-xl border-l border-r border-b border-[#6B0073]/60 rounded-b-3xl p-4 pb-5 text-white relative w-full">
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <div className="text-lg text-white font-sans">
+                          ₹ <span className="line-through text-gray-400">{product.mrp}</span>{' '}
+                          <span className="font-semibold">{product.price}</span>
+                        </div>
+                        <div className="text-xs bg-lime-400 text-black font-semibold px-2 py-0.5 rounded-full font-button">
+                          {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
+                        </div>
+                      </div>
+
+                      <div className="mb-2 w-full">
+                        <Link to={`/product/${product.id}`}>
+                          <h3 className="text-base font-semibold font-body truncate w-full text-left flex items-center gap-2">
+                            {product.name}
+                            <span className="text-sm text-gray-300 font-sans font-normal">(50g)</span>
+                          </h3>
+                        </Link>
+                      </div>
+
+                      <div className="w-full">
+                        {quantity === 0 ? (
+                          <button
+                            onClick={() => {
+                              
+                              handleAddToCart(product);
+                            }}
+                            className="w-full bg-yellow-400 text-black px-3 py-1 text-sm rounded-full font-semibold hover:brightness-110 transition font-button"
+                          >
+                            Add
+                          </button>
+                        ) : (
+                          <div className="flex justify-between items-center w-full bg-yellow-400 rounded-full px-4 py-1 text-black text-sm font-button">
+                            <button onClick={() => handleDecrement(product.id)}><FiMinus /></button>
+                            <span>{quantity}</span>
+                            <button onClick={() => handleIncrement(product.id)}><FiPlus /></button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
       </div>
     </section>
