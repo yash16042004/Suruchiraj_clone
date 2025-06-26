@@ -54,6 +54,7 @@ import Orders from './pages/user/Orders';
 
 import AdminDashboard from './components/AdminDashboard';
 import ProductsPage from './pages/ProductsPage';
+import WishlistPage from './pages/WishlistPage';
 
 const HomePage: React.FC = () => {
   return (
@@ -98,8 +99,8 @@ const App: React.FC = () => {
     <RecoilRoot> {/* ✅ Recoil context added */}
       <Router>
         <LoginModalProvider>
-          <WishlistProvider>
-            <CartProvider> {/* ✅ Cart context without userEmail prop */}
+          <CartProvider>
+            <WishlistProvider>
               <div className="font-sans text-gray-900">
                 <Navbar />
                 <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
@@ -154,11 +155,14 @@ const App: React.FC = () => {
                   {/* Products Page Route */}
                   <Route path="/products" element={<ProductsPage />} />
                   
+                  {/* Wishlist Page Route */}
+                  <Route path="/wishlist" element={<WishlistPage />} />
+                  
                   {/* Fallback Route */}
                 </Routes>
               </div>
-            </CartProvider>
-          </WishlistProvider>
+            </WishlistProvider>
+          </CartProvider>
         </LoginModalProvider>
       </Router>
     </RecoilRoot>

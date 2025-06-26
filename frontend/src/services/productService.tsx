@@ -103,4 +103,19 @@ export const deleteProduct = async (id: string): Promise<void> => {
     console.error('Error deleting product:', error);
     throw error;
   }
+};
+
+// Get unique categories and quantities for filters
+export const getProductFilters = async (): Promise<{ categories: string[]; quantities: string[] }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/products/api/filters`);
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch filters');
+    }
+    return { categories: data.categories, quantities: data.quantities };
+  } catch (error) {
+    console.error('Error fetching product filters:', error);
+    throw error;
+  }
 }; 

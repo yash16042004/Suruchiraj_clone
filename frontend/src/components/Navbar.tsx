@@ -4,6 +4,7 @@ import {
   FiX,
   FiShoppingCart,
   FiUser,
+  FiHeart,
 } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useLoginModal } from '../context/LoginModalContext';
@@ -12,6 +13,7 @@ import CartDrawer from './CartDrawer';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { authStateAtom, userInfoAtom, searchTermAtom } from '../state/state'; // ✅ import searchTermAtom
+import { useWishlist } from '../context/WishlistContext';
 
 const AuthButton = () => {
   const isLoggedIn = useRecoilValue(authStateAtom);
@@ -92,6 +94,7 @@ const Navbar: React.FC = () => {
   const searchQuery = useRecoilValue(searchTermAtom); // ✅ get searchTerm from Recoil
   const setSearchQuery = useSetRecoilState(searchTermAtom); // ✅ set searchTerm from input
   const navigate = useNavigate();
+  const { wishlist } = useWishlist();
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const trendingMasalas = [
@@ -142,6 +145,12 @@ const Navbar: React.FC = () => {
             <Link to="/" className="text-2xl font-bold text-white hover:text-red-500 transition">Suruchiraj</Link>
             <div className="flex items-center space-x-4 text-yellow-400">
               <AuthButton />
+              <Link to="/wishlist" className="relative">
+                <FiHeart className="text-xl" />
+                {wishlist.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">{wishlist.length}</span>
+                )}
+              </Link>
               <button onClick={() => setIsCartOpen(true)} className="relative">
                 <FiShoppingCart className="text-xl" />
                 {cartCount > 0 && (
@@ -174,6 +183,13 @@ const Navbar: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4">
               <AuthButton />
+              <Link to="/wishlist" className="relative flex items-center space-x-1 text-gray-300 hover:text-red-500 transition">
+                <FiHeart className="text-xl" />
+                <span className="text-sm">Wishlist</span>
+                {wishlist.length > 0 && (
+                  <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">{wishlist.length}</span>
+                )}
+              </Link>
               <button onClick={() => setIsCartOpen(true)} className="relative flex items-center space-x-1 text-gray-300 hover:text-red-500 transition">
                 <FiShoppingCart className="text-xl" />
                 <span className="text-sm">My Cart</span>

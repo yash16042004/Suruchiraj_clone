@@ -2,31 +2,27 @@ import { useState, useEffect } from 'react';
 import { FiFilter, FiHeart, FiX } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import { getAllProducts } from '../services/productService';
+import { getAllProducts, getProductFilters } from '../services/productService';
 import toast from 'react-hot-toast';
-import { useRecoilValue, useRecoilState } from 'recoil';
+import { useRecoilValue } from 'recoil';
 import { searchTermAtom, authStateAtom } from '../state/state';
 import { useLoginModal } from '../context/LoginModalContext';
 import type { Product } from '../types/product';
-
-const filters = {
-  quantity: ['50 g', '100 g', '500 g'],
-  categories: [
-    'Veg', 'Non Veg', 'Maharashtrian', 'Snacks', 'Beverages',
-    'Rice', 'Pickle', 'South Indian', 'Soups', 'American',
-    'Chinese', 'Italian', 'Mexican', 'Thai', 'Other',
-  ],
-};
+import { Link } from 'react-router-dom';
 
 const SubProducts = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { cart, addToCart, removeFromCart, updateQuantity, loading: cartLoading } = useCart();
-  const { isWishlisted, toggleWishlist } = useWishlist();
+  const { isWishlisted, addToWishlist, removeFromWishlist } = useWishlist();
   const searchTerm = useRecoilValue(searchTermAtom);
   const authState = useRecoilValue(authStateAtom);
   const { openModal } = useLoginModal();
+  const [filterQuantities, setFilterQuantities] = useState<string[]>([]);
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [selectedQuantities, setSelectedQuantities] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -40,18 +36,27 @@ const SubProducts = () => {
         setLoading(false);
       }
     };
+    const fetchFilters = async () => {
+      try {
+        const { categories, quantities } = await getProductFilters();
+        setFilterCategories(categories || []);
+        setFilterQuantities(Array.isArray(quantities) ? quantities.filter((q): q is string => typeof q === 'string' && q.length > 0) : []);
+      } catch (err) {
+        setFilterCategories([]);
+        setFilterQuantities([]);
+      }
+    };
     fetchProducts();
+    fetchFilters();
   }, []);
 
   const handleWishlistToggle = (product: Product) => {
-    toggleWishlist({
-      id: parseInt(product._id) || 0,
-      name: product.product_name,
-      image: product.images && product.images.length > 0 ? product.images[0] : '',
-      price: product.mrp && product.mrp.length > 0 ? product.mrp[0] : 0
-    });
-    const msg = isWishlisted(parseInt(product._id) || 0) ? 'Removed from wishlist' : 'Added to wishlist';
-    toast.success(msg);
+    const id = product._id;
+    if (isWishlisted(id)) {
+      removeFromWishlist(id);
+    } else {
+      addToWishlist(id);
+    }
   };
 
   const handleAddToCart = async (product: Product) => {
@@ -59,11 +64,9 @@ const SubProducts = () => {
       openModal();
       return;
     }
-
     try {
       await addToCart({
-        productName: product.product_name,
-        price: product.mrp && product.mrp.length > 0 ? product.mrp[0] : 0,
+        productId: product._id,
         quantity: 1
       });
     } catch (error) {
@@ -99,19 +102,85 @@ const SubProducts = () => {
     }
   };
 
+  const handleQuantityChange = (qty: string) => {
+    if (typeof qty !== 'string' || !qty || qty.length === 0) return;
+    setSelectedQuantities((prev) => {
+      const filteredPrev = prev.filter((q): q is string => typeof q === 'string' && q.length > 0);
+      return filteredPrev.includes(qty) ? filteredPrev.filter(q => q !== qty) : [...filteredPrev, qty];
+    });
+  };
+
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+  };
+
+  // Ensure selectedQuantities and filterQuantities are always arrays of strings
+  const safeSelectedQuantities = (Array.isArray(selectedQuantities)
+    ? selectedQuantities.filter((q): q is string => typeof q === 'string' && q.length > 0)
+    : []) as string[];
+  const safeFilterQuantities: string[] = Array.isArray(filterQuantities)
+    ? filterQuantities.filter((q): q is string => typeof q === 'string' && q.length > 0)
+    : [];
+
+  // Debug logs for filter values
+  console.log('selectedQuantities:', selectedQuantities, selectedQuantities.map(q => typeof q));
+  console.log('filterQuantities:', filterQuantities, filterQuantities.map(q => typeof q));
+  console.log('safeSelectedQuantities:', safeSelectedQuantities, safeSelectedQuantities.map(q => typeof q));
+
   const filteredProducts = products.filter((product) => {
     const term = searchTerm.toLowerCase();
     const nameMatch = product.product_name && product.product_name.toLowerCase().includes(term);
 
-    // Handle category as array
-    let categoryMatch = false;
-    if (Array.isArray(product.category)) {
-      categoryMatch = product.category.some(cat =>
+    // Category filter
+    let categoryMatch = true;
+    if (selectedCategories.length > 0) {
+      if (Array.isArray(product.category)) {
+        categoryMatch = product.category.some(cat => selectedCategories.includes(cat));
+      } else {
+        categoryMatch = selectedCategories.includes(product.category);
+      }
+    }
+
+    // Quantity filter
+    let quantityMatch = true;
+    if (safeSelectedQuantities.length > 0) {
+      if (Array.isArray(product.net_wt) && product.net_wt.length > 0) {
+        quantityMatch = product.net_wt.some(wt => {
+          if (
+            wt &&
+            (typeof wt.value === 'string' || typeof wt.value === 'number') &&
+            typeof wt.unit === 'string' &&
+            wt.unit && wt.unit.length > 0
+          ) {
+            const valueStr = String(wt.value).trim();
+            const unitStr = String(wt.unit).trim();
+            if (!valueStr || !unitStr) return false;
+            const productQty = `${valueStr} ${unitStr}`;
+            if (!Array.isArray(safeSelectedQuantities)) return false;
+            const stringSelectedQuantities = safeSelectedQuantities.filter((q): q is string => typeof q === 'string' && q.length > 0);
+            return (stringSelectedQuantities as string[]).some(selQty => {
+              const selQtyTrimmed = (selQty!).trim();
+              return selQtyTrimmed === productQty || selQtyTrimmed === valueStr || selQtyTrimmed === unitStr;
+            });
+          }
+          return false;
+        });
+      } else {
+        quantityMatch = false;
+      }
+    }
+
+    // Search term (name/category)
+    let searchMatch = nameMatch;
+    if (!searchMatch && Array.isArray(product.category)) {
+      searchMatch = product.category.some(cat =>
         typeof cat === 'string' && cat.toLowerCase().includes(term)
       );
     }
 
-    return nameMatch || categoryMatch;
+    return searchMatch && categoryMatch && quantityMatch;
   });
 
   return (
@@ -135,23 +204,36 @@ const SubProducts = () => {
           <div className="mb-6 font-body">
             <h3 className="font-semibold font-heading text-xl mb-2">Quantity</h3>
             <ul className="space-y-2 text-sm text-gray-300">
-              {filters.quantity.map((qty) => (
-                <li key={qty}>
-                  <label className="inline-flex items-center space-x-2">
-                    <input type="checkbox" className="w-5 h-5 appearance-none border-2 border-yellow-400 rounded bg-black checked:bg-yellow-400 checked:border-yellow-400 transition-colors duration-200" />
-                    <span>{qty}</span>
-                  </label>
-                </li>
-              ))}
+              {safeFilterQuantities.map((safeQty) => {
+                if (typeof safeQty !== 'string' || !safeQty.length) return null;
+                return (
+                  <li key={safeQty}>
+                    <label className="inline-flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={safeSelectedQuantities.includes(safeQty)}
+                        onChange={() => handleQuantityChange(safeQty)}
+                        className="form-checkbox accent-yellow-400"
+                      />
+                      <span>{safeQty}</span>
+                    </label>
+                  </li>
+                );
+              })}
             </ul>
           </div>
           <div>
             <h3 className="font-semibold font-heading text-xl mb-2">Category</h3>
             <ul className="space-y-2 text-sm text-gray-300">
-              {filters.categories.map((cat) => (
+              {filterCategories.map((cat) => (
                 <li key={cat}>
                   <label className="inline-flex items-center space-x-2">
-                    <input type="checkbox" className="w-5 h-5 appearance-none border-2 border-yellow-400 rounded bg-black checked:bg-yellow-400 checked:border-yellow-400 transition-colors duration-200" />
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(cat)}
+                      onChange={() => handleCategoryChange(cat)}
+                      className="w-5 h-5 appearance-none border-2 border-yellow-400 rounded bg-black checked:bg-yellow-400 checked:border-yellow-400 transition-colors duration-200"
+                    />
                     <span>{cat}</span>
                   </label>
                 </li>
@@ -178,80 +260,83 @@ const SubProducts = () => {
                 const quantity = cartItem?.quantity || 0;
 
                 return (
-                  <div
-                    key={product._id}
-                    className="bg-[#141414] rounded-2xl overflow-hidden relative group transition transform hover:-translate-y-1"
-                  >
-                    {/* Wishlist Icon */}
-                    <div className="absolute top-3 right-3 z-10">
-                      <button
-                        onClick={() => handleWishlistToggle(product)}
-                        className="text-white text-sm"
-                      >
-                        <FiHeart
-                          className={`text-lg transition ${
-                            isWishlisted(parseInt(product._id) || 0)
-                              ? 'text-red-500 fill-red-500'
-                              : 'text-white'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    {/* Product Image */}
-                    <img
-                      src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder.png'}
-                      alt={product.product_name}
-                      className="w-full h-36 object-cover"
-                    />
-
-                    {/* Product Info */}
-                    <div className="p-3 pt-4 text-white bg-[#141414]">
-                      <h3 className="text-sm font-medium">{product.product_name}</h3>
-                      <div className="flex items-center font-sans space-x-2 text-sm mt-1">
-                        {product.mrp && product.mrp.length > 0 && (
-                          <span className="font-semibold">₹{product.mrp[0]}</span>
-                        )}
-                      </div>
-                      <div className="text-xs font-sans text-gray-300 mt-1">
-                        {product.net_wt && product.net_wt.length > 0 && (
-                          <span>{product.net_wt[0].value} {product.net_wt[0].unit}</span>
-                        )}
-                      </div>
-
-                      {quantity === 0 ? (
+                  <Link to={`/product/${product._id}`} key={String(product._id)}>
+                    <div
+                      className="bg-[#141414] rounded-2xl overflow-hidden relative group transition transform hover:-translate-y-1"
+                    >
+                      {/* Wishlist Icon */}
+                      <div className="absolute top-3 right-3 z-10">
                         <button
-                          onClick={() => handleAddToCart(product)}
-                          disabled={cartLoading}
-                          className={`mt-3 w-full text-sm font-semibold py-1.5 rounded-full transition ${
-                            cartLoading 
-                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
-                              : 'bg-yellow-400 text-black hover:bg-yellow-300'
-                          }`}
+                          onClick={e => { e.preventDefault(); handleWishlistToggle(product); }}
+                          className="text-white text-sm"
                         >
-                          {cartLoading ? 'Adding...' : 'Add Cart'}
+                          <FiHeart
+                            className={`text-lg transition ${
+                              isWishlisted(product._id)
+                                ? 'text-red-500 fill-red-500'
+                                : 'text-white'
+                            }`}
+                          />
                         </button>
-                      ) : (
-                        <div className="mt-3 flex items-center justify-between bg-yellow-400 rounded-full px-3 py-1.5 text-black font-semibold text-sm">
-                          <button
-                            onClick={() => handleDecreaseQuantity(product)}
-                            disabled={cartLoading}
-                            className={`px-2 ${cartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-300 rounded'}`}
-                          >
-                            −
-                          </button>
-                          <span>{quantity}</span>
-                          <button
-                            onClick={() => handleIncreaseQuantity(product)}
-                            disabled={cartLoading}
-                            className={`px-2 ${cartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-300 rounded'}`}
-                          >
-                            +
-                          </button>
+                      </div>
+
+                      {/* Product Image */}
+                      <img
+                        src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder.png'}
+                        alt={product.product_name}
+                        className="w-full h-36 object-cover"
+                      />
+
+                      {/* Product Info */}
+                      <div className="p-3 pt-4 text-white bg-[#141414]">
+                        <h3 className="text-sm font-medium">{product.product_name}</h3>
+                        <div className="flex items-center font-sans space-x-2 text-sm mt-1">
+                          {product.mrp && product.mrp.length > 0 && (
+                            <span className="font-semibold">₹{product.mrp[0]}</span>
+                          )}
                         </div>
-                      )}
+                        <div className="text-xs font-sans text-gray-300 mt-1">
+                          {product.net_wt && product.net_wt.length > 0 && (
+                            <span>
+                              {String(product.net_wt[0]?.value ?? '')} {product.net_wt[0]?.unit ?? ''}
+                            </span>
+                          )}
+                        </div>
+
+                        {quantity === 0 ? (
+                          <button
+                            onClick={e => { e.preventDefault(); handleAddToCart(product); }}
+                            disabled={cartLoading}
+                            className={`mt-3 w-full text-sm font-semibold py-1.5 rounded-full transition ${
+                              cartLoading 
+                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                                : 'bg-yellow-400 text-black hover:bg-yellow-300'
+                            }`}
+                          >
+                            {cartLoading ? 'Adding...' : 'Add Cart'}
+                          </button>
+                        ) : (
+                          <div className="mt-3 flex items-center justify-between bg-yellow-400 rounded-full px-3 py-1.5 text-black font-semibold text-sm">
+                            <button
+                              onClick={e => { e.preventDefault(); handleDecreaseQuantity(product); }}
+                              disabled={cartLoading}
+                              className={`px-2 ${cartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-300 rounded'}`}
+                            >
+                              −
+                            </button>
+                            <span>{quantity}</span>
+                            <button
+                              onClick={e => { e.preventDefault(); handleIncreaseQuantity(product); }}
+                              disabled={cartLoading}
+                              className={`px-2 ${cartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-300 rounded'}`}
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -281,22 +366,28 @@ const SubProducts = () => {
 
             <div className="mb-6 font-body">
               <h3 className="font-medium font-heading text-xl mb-2">Quantity</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                {filters.quantity.map((qty) => (
-                  <li key={qty}>
+              {safeFilterQuantities.map((safeQty) => {
+                if (typeof safeQty !== 'string' || !safeQty.length) return null;
+                return (
+                  <li key={safeQty}>
                     <label className="inline-flex items-center space-x-2">
-                      <input type="checkbox" className="form-checkbox accent-yellow-400" />
-                      <span>{qty}</span>
+                      <input
+                        type="checkbox"
+                        checked={safeSelectedQuantities.includes(safeQty)}
+                        onChange={() => handleQuantityChange(safeQty)}
+                        className="form-checkbox accent-yellow-400"
+                      />
+                      <span>{safeQty}</span>
                     </label>
                   </li>
-                ))}
-              </ul>
+                );
+              })}
             </div>
 
             <div>
               <h3 className="font-semibold font-heading text-xl mb-2">Category</h3>
               <ul className="space-y-2 text-sm text-gray-300">
-                {filters.categories.map((cat) => (
+                {filterCategories.map((cat) => (
                   <li key={cat}>
                     <span className="cursor-pointer hover:text-yellow-400">{cat}</span>
                   </li>

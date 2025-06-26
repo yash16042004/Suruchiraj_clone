@@ -97,6 +97,24 @@ export const userApi = {
       withCredentials: true
     });
     return response.data;
+  },
+
+  // --- Wishlist APIs ---
+  getWishlist: async () => {
+    const response = await axios.get(`${API_BASE_URL}/user/wishlist`, { withCredentials: true });
+    return response.data;
+  },
+  addToWishlist: async (productId: string) => {
+    const response = await axios.post(`${API_BASE_URL}/user/wishlist/${productId}`, {}, { withCredentials: true });
+    return response.data;
+  },
+  removeFromWishlist: async (productId: string) => {
+    const response = await axios.delete(`${API_BASE_URL}/user/wishlist/${productId}`, { withCredentials: true });
+    return response.data;
+  },
+  moveWishlistItemToCart: async (productId: string) => {
+    const response = await axios.post(`${API_BASE_URL}/user/wishlist/move-to-cart/${productId}`, {}, { withCredentials: true });
+    return response.data;
   }
 };
 

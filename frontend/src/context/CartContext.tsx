@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: { productName: string; price: number; quantity?: number }) => Promise<void>;
+  addToCart: (item: { productId: string; quantity?: number }) => Promise<void>;
   removeFromCart: (productName: string) => Promise<void>;
   updateQuantity: (productName: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -57,20 +57,21 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     loadCart();
   }, [authState]);
 
-  const addToCart = async (item: { productName: string; price: number; quantity?: number }) => {
+  const addToCart = async (item: { productId: string; quantity?: number }) => {
     if (!authState) {
       toast.error('Please login to add items to cart');
       return;
     }
     try {
       setLoading(true);
-      const cartData = await addToCartAPI(item.productName, item.price);
+      const cartData = await addToCartAPI(item.productId, item.quantity || 1);
       setCart(cartData.items || []);
       toast.success('Item added to cart successfully');
     } catch (error) {
       console.error('Error adding to cart:', error);
       if (error instanceof Error && error.message.includes('not authenticated')) {
         toast.error('Please login to add items to cart');
+        return;
       } else {
         toast.error('Failed to add item to cart');
       }

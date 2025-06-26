@@ -1,6 +1,7 @@
 const API_BASE_URL = 'http://localhost:3000';
 
 export interface CartItem {
+  productId?: string;
   productName: string;
   price: number;
   quantity: number;
@@ -13,7 +14,7 @@ export interface Cart {
 }
 
 // Add item to cart
-export const addToCart = async (productName: string, price: number): Promise<Cart> => {
+export const addToCart = async (productId: string, quantity: number = 1): Promise<Cart> => {
   try {
     const response = await fetch(`${API_BASE_URL}/cart/add-to-cart`, {
       method: 'POST',
@@ -22,8 +23,8 @@ export const addToCart = async (productName: string, price: number): Promise<Car
       },
       credentials: 'include', // Include cookies for authentication
       body: JSON.stringify({
-        productName,
-        price
+        productId,
+        quantity
       }),
     });
 

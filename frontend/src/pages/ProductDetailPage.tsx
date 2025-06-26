@@ -1,38 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiHeart, FiMinus, FiPlus } from 'react-icons/fi';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import toast from 'react-hot-toast';
 import DeliveryLocation from '../components/DeliveryLocation';
-
-const products = [
-  { id: 1, name: 'Turmeric Powder', image: '/trending masalas/turmeric.png', price: 49, mrp: 80 },
-  { id: 2, name: 'Red Powder', image: '/trending masalas/chilli.png', price: 49, mrp: 80 },
-  { id: 3, name: 'Dhaniya Powder', image: '/trending masalas/dhaniya.png', price: 49, mrp: 80 },
-  { id: 4, name: 'Dummy Masala', image: '/trending masalas/turmeric.png', price: 49, mrp: 80 },
-  { id: 5, name: 'Dummy Masala', image: '/trending masalas/chilli.png', price: 49, mrp: 80 },
-  { id: 6, name: 'Dummy Masala', image: '/trending masalas/dhaniya.png', price: 49, mrp: 80 },
-];
+import { getProductById } from '../services/productService';
+import type { Product } from '../types/product';
 
 const placeholder = '/placeholder.png';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams();
-  const product = products.find((p) => p.id === Number(id));
-  const [selectedImage, setSelectedImage] = useState(product?.image || placeholder);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string>(placeholder);
   const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  const { isWishlisted, toggleWishlist } = useWishlist();
+  const { isWishlisted, addToWishlist, removeFromWishlist, moveWishlistItemToCart } = useWishlist();
   const { addToCart } = useCart();
 
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const data = await getProductById(id);
+        setProduct(data);
+        setSelectedImage(data.images && data.images.length > 0 ? data.images[0] : placeholder);
+      } catch (err) {
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [id]);
+
+  if (loading) return <div className="text-center text-yellow-400 mt-10">Loading...</div>;
   if (!product) return <div className="text-center text-red-500 mt-10">Product not found.</div>;
 
-  const wishlisted = isWishlisted(product.id);
+  const wishlisted = isWishlisted(product._id);
 
   const handleWishlistToggle = () => {
-    toggleWishlist(product);
-    toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    if (wishlisted) {
+      removeFromWishlist(product._id);
+    } else {
+      addToWishlist(product._id);
+    }
+  };
+
+  const handleMoveToCart = () => {
+    moveWishlistItemToCart(product._id);
   };
 
   const handleQuantityChange = (delta: number) => {
@@ -41,12 +60,9 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = () => {
     addToCart({
-      id: product.id,
-      name: product.name,
+      productId: product._id,
       quantity,
-      price: product.price,
     });
-    toast.success(`${product.name} (x${quantity}) added to cart!`);
   };
 
   return (
@@ -56,7 +72,7 @@ const ProductDetailPage: React.FC = () => {
         <div className="col-span-5 flex flex-col-reverse md:flex-row gap-4">
           {/* Thumbnails (mobile below, desktop left) */}
           <div className="flex md:flex-col gap-2 justify-center">
-            {[product.image, placeholder, placeholder, placeholder].map((img, idx) => (
+            {(product.images && product.images.length > 0 ? product.images : [placeholder, placeholder, placeholder, placeholder]).slice(0, 4).map((img, idx) => (
               <div
                 key={idx}
                 className={`w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-xl flex items-center justify-center cursor-pointer border-2 transition-all duration-200 ${
@@ -77,33 +93,29 @@ const ProductDetailPage: React.FC = () => {
               }`}
               onClick={handleWishlistToggle}
             />
-            <img src={selectedImage} alt={product.name} className="h-3/4 object-contain" />
+            <img src={selectedImage} alt={product.product_name} className="h-3/4 object-contain" />
           </div>
         </div>
 
         {/* Product Info */}
         <div className="col-span-7">
-          <h1 className="text-2xl sm:text-3xl font-bold font-heading mb-2">{product.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading mb-2">{product.product_name}</h1>
           <p className="text-yellow-400 font-body mb-2">12 sold in last 10 hours</p>
-          <p className="text-xl font-semibold font-sans mb-3">₹{Math.round(product.price)}</p>
+          <p className="text-xl font-semibold font-sans mb-3">₹{product.mrp && product.mrp.length > 0 ? Math.round(product.mrp[0]) : ''}</p>
 
           <div className="mb-4">
             <p className="mb-1 font-medium font-body">Select Unit</p>
             <div className="flex gap-2 flex-wrap">
-              <button className="px-4 py-2 border rounded-2xl font-button border-yellow-400 text-yellow-400">
-                100g<br /><span className="text-xs font-body">7% off</span>
-              </button>
-              <button className="px-4 py-2 border rounded-2xl font-button border-red-400 text-red-400">
-                50g<br /><span className="text-xs font-body">Out of stock</span>
-              </button>
-              <button className="px-4 py-2 border rounded-2xl font-button border-yellow-400 text-yellow-400">
-                200g<br /><span className="text-xs font-body">10% off</span>
-              </button>
+              {product.net_wt && product.net_wt.map((wt, idx) => (
+                <button key={idx} className="px-4 py-2 border rounded-2xl font-button border-yellow-400 text-yellow-400">
+                  {wt.value}{wt.unit}
+                </button>
+              ))}
             </div>
           </div>
 
           <p className="mb-2 text-xl font-sans font-semibold">
-            <span className="text-white text-2xl font-heading">Subtotal</span>:- ₹{Math.round(product.price * quantity)}
+            <span className="text-white text-2xl font-heading">Subtotal</span>:- ₹{product.mrp && product.mrp.length > 0 ? Math.round(product.mrp[0] * quantity) : ''}
           </p>
 
           <div className="flex items-center gap-4 mb-6 flex-wrap">
@@ -119,6 +131,20 @@ const ProductDetailPage: React.FC = () => {
             >
               Add to Cart
             </button>
+            <button
+              className={`font-button px-4 py-1 rounded-full border transition duration-200 ${wishlisted ? 'border-yellow-400 text-yellow-400' : 'border-white text-white'}`}
+              onClick={handleWishlistToggle}
+            >
+              {wishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            </button>
+            {wishlisted && (
+              <button
+                className="bg-yellow-400 text-black font-button px-4 py-1 rounded-full border border-yellow-400 hover:brightness-125 transition duration-200"
+                onClick={handleMoveToCart}
+              >
+                Move to Cart
+              </button>
+            )}
           </div>
 
           <button className="bg-yellow-400 w-full sm:w-1/2 py-3 text-black rounded-full font-button font-semibold">
@@ -128,17 +154,17 @@ const ProductDetailPage: React.FC = () => {
           {/* Delivery & Policy */}
           <div className="font-body mt-6 space-y-4 text-sm">
             <p>
-              <span className="text-yellow-400 font-heading text-lg font-semibold">Delivery Info:</span>{" "}
+              <span className="text-yellow-400 font-heading text-lg font-semibold">Delivery Info:</span>{' '}
               Delivery within <span className="font-sans">15</span> days
             </p>
             <DeliveryLocation />
             <p>
-              <span className="text-yellow-400 font-heading text-lg font-semibold">Manufactured by:</span>{" "}
-              Suruchiraj Spices, Pune
+              <span className="text-yellow-400 font-heading text-lg font-semibold">Manufactured by:</span>{' '}
+              {product.manufactured_marketed_by || 'Suruchiraj Spices, Pune'}
             </p>
             <p>
-              <span className="text-yellow-400 font-heading text-lg font-semibold">Customer Care:</span>{" "}
-              <span className="font-sans">+91 9867104406</span>
+              <span className="text-yellow-400 font-heading text-lg font-semibold">Customer Care:</span>{' '}
+              <span className="font-sans">{product.customer_care_no || '+91 9867104406'}</span>
             </p>
           </div>
         </div>
@@ -149,28 +175,28 @@ const ProductDetailPage: React.FC = () => {
         <h2 className="text-2xl font-heading font-semibold mb-2">Product Details</h2>
         <p className="text-yellow-400 font-semibold">Ingredients</p>
         <p className="mb-2">
-          Coriander, Cumin, Black Pepper, Clove, Cinnamon, Cardamom, Bay Leaf,
-          Star Anise, Nutmeg, Mace, Chilli, Salt, Turmeric, Dry Ginger.
+          {product.ingredients && product.ingredients.length > 0 ? product.ingredients.join(', ') : 'N/A'}
         </p>
         <p className="text-yellow-400 font-semibold">No Preservatives</p>
         <p className="text-yellow-400 font-semibold">Unit</p>
-        <span className="font-sans">50g</span>
+        <span className="font-sans">{product.net_wt && product.net_wt.length > 0 ? `${product.net_wt[0].value}${product.net_wt[0].unit}` : 'N/A'}</span>
         <p className="text-yellow-400 font-semibold">Why You'll Love It</p>
         <ul className="list-disc list-inside mb-2">
-          <li>Full of rich biryani aroma and taste</li>
-          <li>Made with carefully selected spices</li>
-          <li>Perfect for veg or non-veg biryani at home</li>
+          {product.why_you_will_love_it && product.why_you_will_love_it.length > 0 ? (
+            product.why_you_will_love_it.map((item, idx) => <li key={idx}>{item}</li>)
+          ) : (
+            <li>Full of rich biryani aroma and taste</li>
+          )}
         </ul>
         <p className="text-yellow-400 font-semibold">How to Use (Simple Recipe)</p>
         <ol className="list-decimal list-inside mb-2">
-          <li>Mix <span className="font-sans">1</span> cup curd with <span className="font-sans">2</span> tsp Biryani Masala. Add chicken or veggies.</li>
-          <li>Marinate for <span className="font-sans">1</span> hour.</li>
-          <li>Heat marinated mix in a pan for <span className="font-sans">5</span> mins.</li>
-          <li>Add <span className="font-sans">1.5</span> cups cooked rice. Spread rice and masala in layers.</li>
-          <li>Add lemon juice, mint, fried onion, and a little ghee.</li>
-          <li>Cover and cook on low for <span className="font-sans">10</span> minutes.</li>
+          {product.recipe && Array.isArray(product.recipe) && product.recipe.length > 0 ? (
+            product.recipe.map((step, idx) => <li key={idx}>{step}</li>)
+          ) : (
+            <li>Use as per your taste and recipe.</li>
+          )}
         </ol>
-        <p><span className="text-yellow-400 font-semibold">Shelf Life</span> <span className="font-sans">12</span> Months</p>
+        <p><span className="text-yellow-400 font-semibold">Shelf Life</span> <span className="font-sans">{product.best_before || '12 Months'}</span></p>
       </div>
     </div>
   );

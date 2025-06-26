@@ -6,6 +6,7 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import { searchTermAtom, authStateAtom } from '../state/state';
 import { useCart } from '../context/CartContext';
 import { useLoginModal } from '../context/LoginModalContext';
+import { Link } from 'react-router-dom';
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,9 +38,9 @@ const ProductsPage: React.FC = () => {
 
   // Filter products based on category and search term
   const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || (Array.isArray(product.category) && product.category.includes(selectedCategory));
+    const matchesSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (Array.isArray(product.category) && product.category.some(cat => cat.toLowerCase().includes(searchTerm.toLowerCase())));
     return matchesCategory && matchesSearch;
   });
 
@@ -50,8 +51,7 @@ const ProductsPage: React.FC = () => {
     }
     try {
       await addToCart({
-        productName: product.name,
-        price: product.price,
+        productId: product._id,
         quantity: 1
       });
     } catch (error) {
@@ -120,95 +120,71 @@ const ProductsPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((product) => (
-              <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-semibold text-gray-900">{product.name}</h3>
-                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                      {product.category}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-3 mb-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-2xl font-bold text-green-600">₹{product.price}</span>
-                      <span className="text-gray-500">{product.weight}</span>
+              <Link to={`/product/${product._id}`} key={String(product._id)}>
+                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-semibold text-gray-900">{product.product_name}</h3>
+                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                        {Array.isArray(product.category) ? product.category.join(', ') : product.category}
+                      </span>
                     </div>
                     
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Ingredients:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {product.ingredients.map((ingredient, index) => (
-                          <span
-                            key={index}
-                            className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
-                          >
-                            {ingredient}
-                          </span>
-                        ))}
+                    <div className="space-y-3 mb-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold text-green-600">₹{product.mrp && product.mrp.length > 0 ? product.mrp[0] : ''}</span>
+                        <span className="text-gray-500">{product.net_wt && product.net_wt.length > 0 ? `${product.net_wt[0].value} ${product.net_wt[0].unit}` : ''}</span>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-gray-700 mb-2">Ingredients:</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {product.ingredients && product.ingredients.map((ingredient, index) => (
+                            <span
+                              key={index}
+                              className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                            >
+                              {ingredient}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-gray-700 mb-2">Recipe:</h4>
+                        <p className="text-gray-600 text-sm line-clamp-3">
+                          {product.recipe && Array.isArray(product.recipe) ? product.recipe.join(' ') : product.recipe}
+                        </p>
                       </div>
                     </div>
 
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Nutrition (per 100g):</h4>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Energy:</span>
-                          <span className="font-medium">{product.nutritionValue.energy} kcal</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Fat:</span>
-                          <span className="font-medium">{product.nutritionValue.fat}g</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Protein:</span>
-                          <span className="font-medium">{product.nutritionValue.protein}g</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Carbs:</span>
-                          <span className="font-medium">{product.nutritionValue.carbohydrates}g</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Sugar:</span>
-                          <span className="font-medium">{product.nutritionValue.sugar}g</span>
-                        </div>
-                      </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={e => { e.preventDefault(); handleAddToCart(product); }}
+                        disabled={cartLoading}
+                        className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
+                          cartLoading 
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                      >
+                        {cartLoading ? 'Adding...' : 'Add to Cart'}
+                      </button>
+                      <button 
+                        onClick={e => { e.preventDefault(); handleBuyNow(product); }}
+                        disabled={cartLoading}
+                        className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
+                          cartLoading 
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                      >
+                        Buy Now
+                      </button>
                     </div>
-
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Recipe:</h4>
-                      <p className="text-gray-600 text-sm line-clamp-3">
-                        {product.recipe}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleAddToCart(product)}
-                      disabled={cartLoading}
-                      className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
-                        cartLoading 
-                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {cartLoading ? 'Adding...' : 'Add to Cart'}
-                    </button>
-                    <button 
-                      onClick={() => handleBuyNow(product)}
-                      disabled={cartLoading}
-                      className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
-                        cartLoading 
-                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
-                    >
-                      Buy Now
-                    </button>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
