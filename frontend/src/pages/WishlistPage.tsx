@@ -17,7 +17,7 @@ const WishlistPage: React.FC = () => {
             <Link to="/sub-products" className="text-yellow-400 underline mt-4 inline-block">Browse Products</Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
             {wishlist.map((item) => (
               <div
                 key={item.id}
@@ -27,30 +27,30 @@ const WishlistPage: React.FC = () => {
                 <img
                   src={item.image || '/placeholder.png'}
                   alt={item.name}
-                  className="w-20 h-20 object-contain mx-auto mb-2"
+                  className="w-32 h-32 object-contain mx-auto mb-4"
                 />
 
-                {/* Product Name */}
-                <h2 className="font-heading text-white text-sm text-center mb-1 break-words leading-tight line-clamp-2">
-                  {item.name}
-                </h2>
-
-                {/* Price */}
-                <p className="text-yellow-400 font-bold font-body text-sm text-right mb-2">
-                  ₹{item.price}
-                </p>
+                {/* Product Name & Price */}
+                <div className="flex justify-between items-start flex-wrap gap-x-2 mb-2">
+                  <h2 className="font-heading text-white text-sm sm:text-base break-words leading-tight line-clamp-2 max-w-[70%]">
+                    {item.name}
+                  </h2>
+                  <p className="text-yellow-400 font-bold font-sans text-sm sm:text-base text-right">
+                    ₹{item.price}
+                  </p>
+                </div>
 
                 {/* Buttons */}
-                <div className="flex flex-col gap-1 w-full mt-auto">
+                <div className="flex flex-col sm:flex-row justify-between font-button font-medium gap-2 w-full mt-auto">
                   <button
-                    className="bg-yellow-400 text-black font-button px-2 py-[3px] text-xs rounded-full hover:bg-yellow-300 transition"
+                    className="bg-yellow-400 text-black px-2 py-[6px] text-xs rounded-full hover:bg-yellow-300 transition w-full"
                     onClick={() => moveWishlistItemToCart(String(item.id))}
                     disabled={cartLoading}
                   >
                     Move to Cart
                   </button>
                   <button
-                    className="bg-red-500 text-white font-button px-2 py-[3px] text-xs rounded-full hover:bg-red-400 transition"
+                    className="bg-transparent border border-yellow-400 text-white px-2 py-[6px] text-xs rounded-full hover:bg-yellow-400 hover:text-black transition w-full"
                     onClick={() => removeFromWishlist(String(item.id))}
                   >
                     Remove
@@ -59,7 +59,6 @@ const WishlistPage: React.FC = () => {
               </div>
             ))}
           </div>
-
         )}
       </div>
     </div>

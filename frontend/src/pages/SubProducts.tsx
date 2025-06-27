@@ -358,40 +358,62 @@ const SubProducts = () => {
           >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-semibold font-heading">Filters</h2>
-              <button
-                onClick={() => setIsFilterOpen(false)}
-                className="text-white hover:text-red-400"
-              >
-                <FiX size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedCategories([]);
+                    setSelectedQuantities([]);
+                  }}
+                  className="text-xs text-yellow-400 underline hover:text-yellow-300"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="text-white hover:text-red-400"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
             </div>
+
 
             <div className="mb-6 font-body">
               <h3 className="font-medium font-heading text-xl mb-2">Quantity</h3>
-              {safeFilterQuantities.map((safeQty) => {
-                if (typeof safeQty !== 'string' || !safeQty.length) return null;
-                return (
-                  <li key={safeQty}>
-                    <label className="inline-flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={safeSelectedQuantities.includes(safeQty)}
-                        onChange={() => handleQuantityChange(safeQty)}
-                        className="form-checkbox accent-yellow-400"
-                      />
-                      <span>{safeQty}</span>
-                    </label>
-                  </li>
-                );
-              })}
+              <ul className="space-y-2 text-sm text-gray-300 list-none pl-0">
+                {safeFilterQuantities.map((safeQty) => {
+                  if (typeof safeQty !== 'string' || !safeQty.length) return null;
+                  return (
+                    <li key={safeQty}>
+                      <label className="inline-flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={safeSelectedQuantities.includes(safeQty)}
+                          onChange={() => handleQuantityChange(safeQty)}
+                          className="w-5 h-5 appearance-none border-2 border-yellow-400 rounded bg-black relative checked:bg-black checked:border-yellow-400 transition-colors duration-200 checked:after:content-['✓'] checked:after:text-yellow-400 checked:after:absolute checked:after:inset-0 checked:after:flex checked:after:items-center checked:after:justify-center checked:after:text-sm"
+                        />
+                        <span>{safeQty}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
+
 
             <div>
               <h3 className="font-semibold font-heading text-xl mb-2">Category</h3>
               <ul className="space-y-2 text-sm text-gray-300">
                 {filterCategories.map((cat) => (
                   <li key={cat}>
-                    <span className="cursor-pointer hover:text-yellow-400">{cat}</span>
+                    <span
+                      className={`cursor-pointer hover:text-yellow-400 ${
+                        selectedCategories.includes(cat) ? 'text-yellow-400' : ''
+                      }`}
+                      onClick={() => handleCategoryChange(cat)}
+                    >
+                      {cat}
+                    </span>
                   </li>
                 ))}
               </ul>

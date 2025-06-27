@@ -97,8 +97,8 @@ const Orders: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading orders...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto"></div>
+          <p className="mt-4 text-gray-200">Loading orders...</p>
         </div>
       </div>
     );
@@ -112,8 +112,8 @@ const Orders: React.FC = () => {
         {orders.length === 0 ? (
           <div className="text-center py-12 font-body">
             <div className="text-gray-200 text-6xl mb-4">📦</div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">No Orders Yet</h2>
-            <p className="text-gray-600">Start shopping to see your order history here.</p>
+            <h2 className="text-2xl font-semibold text-gray-200 mb-2">No Orders Yet</h2>
+            <p className="text-gray-300">Start shopping to see your order history here.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -123,22 +123,22 @@ const Orders: React.FC = () => {
                 <div
                   key={order._id}
                   onClick={() => handleOrderClick(order)}
-                  className="bg-white p-6 font-body rounded-xl shadow-md border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-black p-6 font-body rounded-xl shadow-md border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold font-sans text-gray-800">
+                      <h3 className="text-lg font-semibold font-sans text-gray-100">
                         Order #{order._id.slice(-8).toUpperCase()}
                       </h3>
-                      <p className="text-gray-600 font-sans text-sm">
+                      <p className="text-gray-100 font-sans text-sm">
                         {formatDate(order.createdAt)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-gray-800 font-sans">
+                      <p className="text-xl font-bold text-gray-100 font-sans">
                         ₹{order.totalAmount.toFixed(2)}
                       </p>
-                      <p className="text-sm font-sans text-gray-600">
+                      <p className="text-sm font-sans text-gray-100">
                         {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -147,13 +147,13 @@ const Orders: React.FC = () => {
                   {/* Status Indicators */}
                   <div className="flex space-x-4 mb-4">
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-700">Payment:</span>
+                      <span className="text-sm font-medium text-gray-100">Payment:</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.paymentStatus)}`}>
                         {getStatusText(order.paymentStatus)}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-700">Delivery:</span>
+                      <span className="text-sm font-medium text-gray-100">Delivery:</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.orderStatus)}`}>
                         {getStatusText(order.orderStatus)}
                       </span>
@@ -164,21 +164,21 @@ const Orders: React.FC = () => {
                   <div className="space-y-2">
                     {order.items.slice(0, 2).map((item, index) => (
                       <div key={index} className="flex justify-between text-sm">
-                        <span className="text-gray-700">
+                        <span className="text-gray-100">
                           {item.productName} x {item.quantity}
                         </span>
-                        <span className="text-gray-800 font-medium font-sans">₹{(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="text-gray-100 font-medium font-sans">₹{(item.price * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
                     {order.items.length > 2 && (
-                      <p className="text-gray-600 text-sm">
+                      <p className="text-gray-100 text-sm">
                         +{order.items.length - 2} more item{order.items.length - 2 !== 1 ? 's' : ''}
                       </p>
                     )}
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-yellow-600 text-sm font-medium">
+                    <p className="text-yellow-600 text-sm font-semibold">
                       Click to view details →
                     </p>
                   </div>
@@ -191,15 +191,15 @@ const Orders: React.FC = () => {
         {/* Order Details Modal */}
         {showOrderDetails && selectedOrder && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gray-200 font-body rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-black font-body rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold font-body text-gray-800">
+                  <h2 className="text-2xl font-bold font-heading text-yellow-600">
                     Order Details
                   </h2>
                   <button
                     onClick={() => setShowOrderDetails(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-100 hover:text-gray-200"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -208,18 +208,18 @@ const Orders: React.FC = () => {
                 </div>
 
                 {/* Order Header */}
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <div className="bg-black p-4 border border-white rounded-lg mb-6">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-sans font-semibold text-gray-800">
+                      <h3 className="text-lg font-sans font-semibold text-gray-100">
                         Order #{selectedOrder._id.slice(-8).toUpperCase()}
                       </h3>
-                      <p className="text-gray-600 text-sm">
+                      <p className="text-gray-100 text-sm">
                         Placed on {formatDate(selectedOrder.createdAt)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold font-sans  text-gray-800">
+                      <p className="text-2xl font-bold font-sans  text-gray-100">
                         ₹{selectedOrder.totalAmount.toFixed(2)}
                       </p>
                     </div>
@@ -228,14 +228,14 @@ const Orders: React.FC = () => {
 
                 {/* Status Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-800 mb-2">Payment Status</h4>
+                  <div className="bg-black p-4 border border-white rounded-lg">
+                    <h4 className="font-semibold text-gray-100 mb-2">Payment Status</h4>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedOrder.paymentStatus)}`}>
                       {getStatusText(selectedOrder.paymentStatus)}
                     </span>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-800 mb-2">Delivery Status</h4>
+                  <div className="bg-black p-4 border border-white rounded-lg">
+                    <h4 className="font-semibold text-gray-100 mb-2">Delivery Status</h4>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedOrder.orderStatus)}`}>
                       {getStatusText(selectedOrder.orderStatus)}
                     </span>
@@ -244,15 +244,15 @@ const Orders: React.FC = () => {
 
                 {/* Order Items */}
                 <div className="mb-6">
-                  <h4 className="font-semibold text-gray-800 mb-4">Order Items</h4>
+                  <h4 className="font-semibold text-yellow-600 mb-4">Order Items</h4>
                   <div className="space-y-3">
                     {selectedOrder.items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                      <div key={index} className="flex justify-between items-center bg-black p-4 border border-white rounded-lg">
                         <div>
-                          <p className="font-medium text-gray-800">{item.productName}</p>
-                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                          <p className="font-medium text-gray-100">{item.productName}</p>
+                          <p className="text-sm text-gray-100">Quantity: {item.quantity}</p>
                         </div>
-                        <p className="font-semibold font-sans text-gray-800">
+                        <p className="font-semibold font-sans text-gray-100">
                           ₹{(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
@@ -262,15 +262,15 @@ const Orders: React.FC = () => {
 
                 {/* Delivery Address */}
                 <div className="mb-6">
-                  <h4 className="font-semibold text-gray-800 mb-4">Delivery Address</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="font-medium text-gray-800">{selectedOrder.deliveryAddress.name}</p>
-                    <p className="text-gray-600 font-sans">{selectedOrder.deliveryAddress.phone}</p>
-                    <p className="text-gray-700">{selectedOrder.deliveryAddress.addressLine1}</p>
+                  <h4 className="font-semibold text-yellow-600 mb-4">Delivery Address</h4>
+                  <div className="bg-black p-4 border border-white rounded-lg">
+                    <p className="font-medium text-gray-100">{selectedOrder.deliveryAddress.name}</p>
+                    <p className="text-gray-100 font-sans">{selectedOrder.deliveryAddress.phone}</p>
+                    <p className="text-gray-100">{selectedOrder.deliveryAddress.addressLine1}</p>
                     {selectedOrder.deliveryAddress.addressLine2 && (
-                      <p className="text-gray-700">{selectedOrder.deliveryAddress.addressLine2}</p>
+                      <p className="text-gray-100">{selectedOrder.deliveryAddress.addressLine2}</p>
                     )}
-                    <p className="text-gray-700">
+                    <p className="text-gray-100">
                       {selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.pincode}
                     </p>
                   </div>
@@ -278,21 +278,21 @@ const Orders: React.FC = () => {
 
                 {/* Order Timeline */}
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-4">Order Timeline</h4>
+                  <h4 className="font-semibold text-yellow-600 mb-4">Order Timeline</h4>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                       <div>
-                        <p className="text-gray-800 font-medium">Order Placed</p>
-                        <p className="text-gray-600 font-sans text-sm">{formatDate(selectedOrder.createdAt)}</p>
+                        <p className="text-gray-100 font-medium">Order Placed</p>
+                        <p className="text-gray-100 font-sans text-sm">{formatDate(selectedOrder.createdAt)}</p>
                       </div>
                     </div>
                     {selectedOrder.orderStatus !== 'pending' && selectedOrder.orderStatus !== 'N/A' && (
                       <div className="flex items-center space-x-3">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <div>
-                          <p className="text-gray-800 font-medium">Order Confirmed</p>
-                          <p className="text-gray-600 text-sm">{formatDate(selectedOrder.updatedAt)}</p>
+                          <p className="text-gray-100 font-medium">Order Confirmed</p>
+                          <p className="text-gray-100 text-sm">{formatDate(selectedOrder.updatedAt)}</p>
                         </div>
                       </div>
                     )}

@@ -95,8 +95,6 @@ const HomePage: React.FC = () => {
           </section>
         </div>
       </div>
-
-      <Footer />
     </>
   );
 };
@@ -176,6 +174,7 @@ const App: React.FC = () => {
                   
                   {/* Fallback Route */}
                 </Routes>
+                <Footer />
               </div>
             </WishlistProvider>
           </CartProvider>

@@ -66,7 +66,7 @@ const AuthButton = () => {
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-60 bg-white text-black rounded-md shadow-md z-50 divide-y divide-gray-200">
+        <div className="absolute right-0 mt-2 w-60 bg-white text-black rounded-md shadow-md z-50 divide-y divide-gray-200 font-body">
           <div className="flex items-center p-4">
             <img
               src={userData.photo || '/user.png'}
@@ -129,18 +129,40 @@ const Navbar: React.FC = () => {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const trendingMasalas = [
-    'Spnich Soup',
-    'Turmeric Powder',
-    'Red Chili Powder',
-    'Cumin Powder',
-    'Dummy Masala',
-    'Chole Masala',
-    'Pav Bhaji Masala',
-    'Kitchen King',
-    'Biryani Masala',
-    'Sabzi Masala',
-    'Sambar Masala',
+    'Chhole Masala',
+    'Dal Fry Masala',
+    'Garam Masala',
     'Paneer Butter Masala',
+    'Pav Bhaji Masala',
+    'Punjabi Masala',
+    'Tikka Masala',
+    'C. K. P. Masala',
+    'Goda Masala',
+    'Frankie Masala',
+    'Kolhapuri Misal Masala',
+    'Ragada Pattice Masala',
+    'Batata Vada',
+    'Bhel Masala',
+    'Tandoori Chicken Masala',
+    'Chicken Curry Masala',
+    'Kolhapuri Tambhda Rassa',
+    'Chicken Chettinad Masala',
+    'Biryani Masala',
+    'Khichadi Masala',
+    'Pulao Masala',
+    'Peri-Peri Spice Mix',
+    'Red Sauce Pasta Mix',
+    'Cheesy White Sauce Pasta',
+    'Thai Curry - Green',
+    'Thai Curry - Red',
+    'Butter Milk Masala',
+    'Tea Masala',
+    'Spinach (Palak) Soup',
+    'Tomato Soup',
+    'Manchow Soup',
+    'Mix Veg Soup',
+    'Mushroom Soup'
+
   ];
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -172,7 +194,9 @@ const Navbar: React.FC = () => {
             <button onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? <FiX className="text-2xl text-yellow-400" /> : <FiMenu className="text-2xl text-yellow-400" />}
             </button>
-            <Link to="/" className="text-2xl font-bold text-white hover:text-red-500 transition">Suruchiraj</Link>
+              <Link to="/" className="block">
+                <img src="/Logo1.PNG" alt="Suruchiraj Logo" className="h-10 w-auto" />
+              </Link>
             <div className="flex items-center space-x-4 text-yellow-400">
               <AuthButton />
               <Link to="/wishlist" className="relative">
@@ -192,7 +216,9 @@ const Navbar: React.FC = () => {
 
           {/* Desktop */}
           <div className="hidden md:flex items-center justify-between w-full">
-            <Link to="/" className="text-2xl font-bold text-white hover:text-red-500 transition">Suruchiraj</Link>
+            <Link to="/" className="block">
+              <img src="/Logo1.PNG" alt="Suruchiraj Logo" className="h-10 w-auto" />
+            </Link>
             <div className="flex items-center space-x-6 -mr-60">
               <nav className="flex space-x-4">
                 {navLinks.map((link) => (
