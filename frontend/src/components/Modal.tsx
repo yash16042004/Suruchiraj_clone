@@ -1,4 +1,6 @@
 // components/Modal.tsx
+
+// used for address form
 import React from 'react';
 import { FiX } from 'react-icons/fi';
 

@@ -107,7 +107,7 @@ const ProductDetailPage: React.FC = () => {
             <p className="mb-1 font-medium font-body">Select Unit</p>
             <div className="flex gap-2 flex-wrap">
               {product.net_wt && product.net_wt.map((wt, idx) => (
-                <button key={idx} className="px-4 py-2 border rounded-2xl font-button border-yellow-400 text-white">
+                <button key={idx} className="px-4 py-2 border rounded-2xl font-button border-yellow-400 text-yellow-400">
                   {wt.value}{wt.unit}
                 </button>
               ))}
@@ -181,8 +181,8 @@ const ProductDetailPage: React.FC = () => {
         <p className="mb-2">
           {product.ingredients && product.ingredients.length > 0 ? product.ingredients.join(', ') : 'N/A'}
         </p>
-        <p className="text-yellow-400 font-semibold">No Preservatives</p>
-        <div className="flex items-center gap-2">
+        <p className="text-yellow-400 font-semibold mb-2">No Preservatives</p>
+        <div className="flex items-center gap-2 mb-2">
           <p className="text-yellow-400 font-semibold">Unit:</p>
           <span className="font-sans">
             {product.net_wt && product.net_wt.length > 0

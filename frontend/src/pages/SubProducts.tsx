@@ -309,16 +309,16 @@ const SubProducts = () => {
                           <button
                             onClick={e => { e.preventDefault(); handleAddToCart(product); }}
                             disabled={cartLoading}
-                            className={`mt-3 w-full text-sm font-semibold py-1.5 rounded-full transition ${
+                            className={`mt-3 w-full text-sm font-button font-semibold py-1.5 rounded-full transition ${
                               cartLoading 
                                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
                                 : 'bg-yellow-400 text-black hover:bg-yellow-300'
                             }`}
                           >
-                            {cartLoading ? 'Adding...' : 'Add Cart'}
+                            {cartLoading ? 'Adding...' : 'Add To Cart'}
                           </button>
                         ) : (
-                          <div className="mt-3 flex items-center justify-between bg-yellow-400 rounded-full px-3 py-1.5 text-black font-semibold text-sm">
+                          <div className="mt-3 flex items-center justify-between bg-yellow-400 rounded-full px-3 py-1.5 text-black font-button font-semibold text-sm">
                             <button
                               onClick={e => { e.preventDefault(); handleDecreaseQuantity(product); }}
                               disabled={cartLoading}
